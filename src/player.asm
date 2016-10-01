@@ -58,30 +58,6 @@ player_update:
 	; Update camera
 	call player_cam_update
 
-	pop de
-	pop bc
-	pop hl
-	pop af
-	ret
-
-	; player_redraw: Uploads the next player sprite
-	;
-	; Input: -
-	; Output: -
-	; Clobbers: -
-player_redraw:
-	push af
-	push hl
-	push de
-	push bc
-	ld hl, psprite01_beg + 64*0
-	ld de, $8800
-	push hl
-	call load_tile_sprite
-	pop hl
-	inc h
-	call load_tile_sprite
-
 	; Get camera pos
 	; X
 	ld hl, cam_x
@@ -93,7 +69,7 @@ player_redraw:
 
 	; Set player sprite pos
 	; Y
-	ld hl, $FE00
+	ld hl, oam_buf + $00
 	ld a, (player_y)
 	sub b
 	add $10
@@ -110,11 +86,27 @@ player_redraw:
 	add $08
 	ld (hl), a
 
-	; Return
 	pop de
 	pop bc
 	pop hl
 	pop af
+	ret
+
+	; player_redraw_unsafe: Uploads the next player sprite
+	;
+	; Input: -
+	; Output: -
+	; Clobbers: AF, BC, DE, HL
+player_redraw_unsafe:
+	ld hl, psprite01_beg + 64*0
+	ld de, $8800
+	push hl
+	call load_tile_sprite
+	pop hl
+	inc h
+	call load_tile_sprite
+
+	; Return
 	ret
 
 	; player_cam_update: Centre the camera on the player

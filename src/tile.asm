@@ -108,14 +108,23 @@ load_tile_sprite:
 	; 00 11 = 0 3 = 3
 	; 11 00 = 3 0 = 3
 	;
-	ld b, 64
+	ld b, 16
 	-:
 		; Load it all
 		ldi a,(hl)
 		ld (de), a
 		inc e
+		ldi a,(hl)
+		ld (de), a
+		inc e
+		ldi a,(hl)
+		ld (de), a
+		inc e
+		ldi a,(hl)
+		ld (de), a
+		inc e
 		dec b
-		jr nz, -
+		jp nz, -
 
 	; Carry for DE
 	ld a, e

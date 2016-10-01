@@ -1,3 +1,14 @@
+.struct oam
+	y db
+	x db
+	tile db
+	flags db
+.endst
+
+.ramsection "ram_screen_sprite" slot 1 align 256
+	oam_buf instanceof oam 4
+.ends
+
 .section "file_screen"
 	; screen_on: Turns the screen on.
 	;

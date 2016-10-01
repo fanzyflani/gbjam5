@@ -24,6 +24,16 @@ ramsize $00
 .endgb
 .nintendologo
 
+.ramsection "hram_dma_copy" slot 2
+	; hram_dma_copy: Perform DMA OAM copy.
+	;
+	; Input:
+	; - A: Top byte of source OAM table address
+	; Output: -
+	; Clobbers: A,F
+	hram_dma_copy dsb 10
+.ends
+
 .include "src/hwdefs.asm"
 
 ;
@@ -57,6 +67,14 @@ jp start
 ;
 
 .section "Code1x"
+hram_dma_copy_base_beg:
+	ld (DMA), a ; 2b
+	ld a, $28 ; 2b
+	-: dec a ; 1b 1c
+	jr nz, - ; 2b 4c
+	ret ; 1b
+hram_dma_copy_base_end:
+
 start:
 	; Usual setup
 	di
@@ -65,6 +83,17 @@ start:
 	ld (IE), a
 	xor a
 	ld (IF), a
+
+	; Copy hram_dma_copy to high RAM
+	ld de, hram_dma_copy
+	ld hl, hram_dma_copy_base_beg
+	ld b, 10
+	-:
+		ldi a, (hl)
+		ld (de), a
+		inc de
+		dec b
+		jp nz, -
 
 	; Set up LCDC
 	ld a, (LCDC)
@@ -83,8 +112,18 @@ start:
 		bit 5, h
 		jp z, -
 
-	; Clear OAM
+	; Clear real OAM
 	ld hl, $FE00
+	xor a
+	ld b, 40*4
+	-:
+		ld (hl), a
+		inc l
+		dec b
+		jp nz, -
+
+	; Clear OAM buffer
+	ld hl, oam_buf
 	xor a
 	ld b, 40*4
 	-:
@@ -123,7 +162,7 @@ start:
 	++:
 
 	; Set up a sprite
-	ld hl, $FE00
+	ld hl, oam_buf + $00
 	ld a, 0+16
 	ld (hl), a
 	inc l
@@ -151,9 +190,9 @@ start:
 	; Set palettes
 	ld a, %00011011
 	ld (BGP), a
-	ld a, %00101100
-	ld (OBP0), a
 	ld a, %00011100
+	ld (OBP0), a
+	ld a, %00101100
 	ld (OBP1), a
 
 	; Turn screen on
@@ -178,20 +217,11 @@ irq_vblank:
 	ld (BGP), a
 
 	; Update player sprite
-	call player_redraw
+	call player_redraw_unsafe
 
-	; Swap sprite bits
-	ld hl, $FE02
-	ld a, (hl)
-	xor $02
-	ld (hl), a
-	inc l
-	inc l
-	inc l
-	inc l
-	ld a, (hl)
-	xor $02
-	ld (hl), a
+	; Do DMA
+	ld a, oam_buf>>8
+	call hram_dma_copy
 
 	; Scroll
 	ld a, (cam_y)
@@ -209,12 +239,29 @@ irq_vblank:
 	xor %00110000
 	ld (OBP0), a
 
-	; Update stuff
-	call player_update
+	;
+	; VBLANK CRITICAL SECTION ENDS HERE
+	;
 
 	; DEBUG: Restore BG
 	ld a, %00011011
 	ld (BGP), a
+
+	; Swap sprite bits
+	ld hl, oam_buf+$02
+	ld a, (hl)
+	xor $02
+	ld (hl), a
+	inc l
+	inc l
+	inc l
+	inc l
+	ld a, (hl)
+	xor $02
+	ld (hl), a
+
+	; Update stuff
+	call player_update
 
 	pop de
 	pop bc
