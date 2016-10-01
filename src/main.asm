@@ -19,8 +19,18 @@ ramsize $00
 .nintendologo
 
 ;
+; RAMSECTION
+; TODO: actual ramsection block
+;
+.define player_x $FF80
+.define player_y $FF81
+
+;
 ; HARDWARE DEFINES
 ;
+
+.define JOYP $FF00
+
 .define LCDC $FF40
 .define STAT $FF41
 .define SCY  $FF42
@@ -140,6 +150,11 @@ start:
 	ld a, %00000000
 	ld (hl), a
 
+	ld a, 0
+	ld (player_x), a
+	ld a, 0
+	ld (player_y), a
+
 	; Set palettes
 	ld a, %00011011
 	ld (BGP), a
@@ -154,33 +169,93 @@ start:
 	; TEST: Swap tile banks each frame
 	ld c, $00
 	--:
+		; Get input
+		ld hl, JOYP
+		ld a, $20
+		ld (hl), a
+		ld a, (hl)
+		ld a, (hl)
+		and $0F
+		ld c, a
+		ld a, $10
+		ld (hl), a
+		ld a, (hl)
+		ld a, (hl)
+		ld a, (hl)
+		ld a, (hl)
+		ld a, (hl)
+		ld a, (hl)
+		and $0F
+		swap a
+		or c
+		ld c, a
+		ld a, $30
+		ld (hl), a
+
+		ld hl, player_x
+		bit 0, c
+		jp nz, +
+			inc (hl)
+		+:
+		bit 1, c
+		jp nz, +
+			dec (hl)
+		+:
+		ld hl, player_y
+		bit 2, c
+		jp nz, +
+			dec (hl)
+		+:
+		bit 3, c
+		jp nz, +
+			inc (hl)
+		+:
+
+		; Wait for vblank start
 		-:
 			ld a, (LY)
 			cp 144
 			jp c, -
 
+		; Swap BG banks
 		ld a, (LCDC)
 		xor $10
 		ld (LCDC), a
 
+		; Swap sprite bits
 		ld hl, $FE02
 		ld a, (hl)
 		xor $02
 		ld (hl), a
-		ld l, $06
+		inc l
+		inc l
+		inc l
+		inc l
 		ld a, (hl)
 		xor $02
 		ld (hl), a
+
+		; Screw with object palette
 		ld a, (OBP0)
 		xor %00110000
 		ld (OBP0), a
 
-		ld a, c
-		rlca
-		rlca
-		;ld (BGP), a
-		inc c
+		; Set player X,Y
+		ld hl, $FE00
+		ld a, (player_y)
+		add $10
+		ld (hl), a
+		ld l, $04
+		ld (hl), a
+		ld l, $01
+		ld a, (player_x)
+		add $08
+		ld (hl), a
+		ld l, $05
+		add $08
+		ld (hl), a
 
+		; Wait for vblank end
 		-:
 			ld a, (LY)
 			cp 144
