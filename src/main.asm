@@ -1,17 +1,19 @@
 .memorymap
-slotsize $4000
+slotsize $8000
 slot 0 $0000
-slot 1 $4000
 slotsize $2000
-slot 2 $C000
+slot 1 $D000
 slotsize $7F
-slot 3 $FF80
+slot 2 $FF80
+slotsize $2000
+slot 3 $C000
 defaultslot 0
 .endme
 
 .rombankmap
+; work around a bug in WLA-GB: apparently you cannot only define one bank
 bankstotal 2
-banksize $4000
+banksize $8000
 banks 2
 .endro
 
@@ -28,6 +30,7 @@ ramsize $00
 ; Main includes
 ;
 .include "src/joy.asm"
+.include "src/level.asm"
 .include "src/player.asm"
 .include "src/screen.asm"
 .include "src/tile.asm"

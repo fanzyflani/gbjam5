@@ -1,4 +1,4 @@
-.ramsection "ram_player" bank 0 slot 2
+.ramsection "ram_player" slot 1
 	player_x db
 	player_y db
 .ends
