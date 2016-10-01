@@ -87,12 +87,12 @@ start:
 	ld de, $8000
 	;call load_tile_bg
 
-	ld hl, sprites1_beg
+	ld hl, sprites1_beg + 64*0
 	ld de, $8800
+	push hl
 	call load_tile_sprite
-	call load_tile_sprite
-	call load_tile_sprite
-	call load_tile_sprite
+	pop hl
+	inc h
 	call load_tile_sprite
 
 	; Set up a sprite
@@ -115,7 +115,7 @@ start:
 	ld a, 8+8
 	ld (hl), a
 	inc l
-	ld a, $90
+	ld a, $84
 	ld (hl), a
 	inc l
 	ld a, %00000000
