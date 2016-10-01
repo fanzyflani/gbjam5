@@ -128,18 +128,29 @@ player_cam_update:
 	push de
 
 	; Set up player camera
-	; X
+	; X get raw
 	ld hl, player_x
 	ld a, (hl)
 	inc l
 	ld h, (hl)
 	ld l, a
+	; X clamp -ve
 	ld de, -(160-16)/2
 	add hl, de
 	bit 7, h
 	jr z, +
 		ld hl, $0000
 	+:
+	; X clamp +ve
+	ld de, 160
+	add hl, de
+	bit 2, h
+	jr z, +
+		ld hl, 64*16
+	+:
+	ld de, -160
+	add hl, de
+	; X write
 	ld a, l
 	ld (cam_x+0), a
 	ld a, h
@@ -151,12 +162,23 @@ player_cam_update:
 	inc l
 	ld h, (hl)
 	ld l, a
+	; Y clamp -ve
 	ld de, -(144-16)/2
 	add hl, de
 	bit 7, h
 	jr z, +
 		ld hl, $0000
 	+:
+	; Y clamp +ve
+	ld de, 144
+	add hl, de
+	bit 2, h
+	jr z, +
+		ld hl, 64*16
+	+:
+	ld de, -144
+	add hl, de
+	; Y write
 	ld a, l
 	ld (cam_y+0), a
 	ld a, h
