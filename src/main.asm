@@ -40,8 +40,14 @@ ramsize $00
 ;
 
 .bank 0 slot 0
+
+.org $0040
+.section "Vec_Jump_VBlank" force
+jp irq_vblank
+.ends
+
 .org $0100
-.section "Vec_Jump" size 4 force
+.section "Vec_Jump_Start" size 4 force
 nop
 jp start
 .ends
@@ -55,6 +61,10 @@ start:
 	; Usual setup
 	di
 	ld sp, $DFF0
+	ld a, %00000
+	ld (IE), a
+	xor a
+	ld (IF), a
 
 	; Set up LCDC
 	ld a, (LCDC)
@@ -149,56 +159,69 @@ start:
 	; Turn screen on
 	call screen_on
 
-	; TEST: Swap tile banks each frame
-	ld c, $00
-	--:
-		; Update stuff
-		call player_update
+	; Hang off the vblank IRQ for now
+	ld hl, IE
+	set 0, (hl)
+	ld hl, IF
+	res 0, (hl)
+	ei
+	-: jp -
 
-		; Wait for vblank start
-		-:
-			ld a, (LY)
-			cp 144
-			jp c, -
+irq_vblank:
+	push af
+	push hl
+	push bc
+	push de
 
-		; Update player sprite
-		call player_redraw
+	; DEBUG: Mark BG inverted
+	ld a, %11100100
+	ld (BGP), a
 
-		; Swap sprite bits
-		ld hl, $FE02
-		ld a, (hl)
-		xor $02
-		ld (hl), a
-		inc l
-		inc l
-		inc l
-		inc l
-		ld a, (hl)
-		xor $02
-		ld (hl), a
+	; Update player sprite
+	call player_redraw
 
-		; Scroll
-		ld a, (cam_y)
-		ld (SCY), a
-		ld a, (cam_x)
-		ld (SCX), a
+	; Swap sprite bits
+	ld hl, $FE02
+	ld a, (hl)
+	xor $02
+	ld (hl), a
+	inc l
+	inc l
+	inc l
+	inc l
+	ld a, (hl)
+	xor $02
+	ld (hl), a
 
-		; Swap BG banks
-		ld a, (LCDC)
-		xor $10
-		ld (LCDC), a
+	; Scroll
+	ld a, (cam_y)
+	ld (SCY), a
+	ld a, (cam_x)
+	ld (SCX), a
 
-		; Screw with object palette
-		ld a, (OBP0)
-		xor %00110000
-		ld (OBP0), a
+	; Swap BG banks
+	ld a, (LCDC)
+	xor $10
+	ld (LCDC), a
 
-		; Wait for vblank end
-		-:
-			ld a, (LY)
-			cp 144
-			jp nc, -
-		jp --
+	; Screw with object palette
+	ld a, (OBP0)
+	xor %00110000
+	ld (OBP0), a
+
+	; Update stuff
+	call player_update
+
+	; DEBUG: Restore BG
+	ld a, %00011011
+	ld (BGP), a
+
+	pop de
+	pop bc
+	pop hl
+	pop af
+	ei
+	ret
 .ends
 
 
