@@ -1,6 +1,8 @@
 .ramsection "ram_player" slot 1
-	player_x db
-	player_y db
+	player_x dw
+	player_y dw
+	cam_x dw
+	cam_y dw
 .ends
 
 .section "file_player"
@@ -9,29 +11,57 @@
 	; Input: -
 	; Output:
 	; - A: Current joypad state (same order as GBA)
-	; Clobbers: F
+	; Clobbers: -
 player_update:
+	push af
+	push hl
+	push bc
+	push de
+
 	call joy_update
 	ld c, a
 
+	; X
 	ld hl, player_x
+	ld e, (hl)
+	inc l
+	ld d, (hl)
 	bit 4, c
 	jp nz, +
-		inc (hl)
+		inc de
 	+:
 	bit 5, c
 	jp nz, +
-		dec (hl)
+		dec de
 	+:
+	ld (hl), d
+	dec l
+	ld (hl), e
+
+	; Y
 	ld hl, player_y
+	ld e, (hl)
+	inc l
+	ld d, (hl)
 	bit 6, c
 	jp nz, +
-		dec (hl)
+		dec de
 	+:
 	bit 7, c
 	jp nz, +
-		inc (hl)
+		inc de
 	+:
+	ld (hl), d
+	dec l
+	ld (hl), e
+
+	; Update camera
+	call player_cam_update
+
+	pop de
+	pop bc
+	pop hl
+	pop af
 	ret
 
 	; player_redraw: Uploads the next player sprite
@@ -43,6 +73,7 @@ player_redraw:
 	push af
 	push hl
 	push de
+	push bc
 	ld hl, psprite01_beg + 64*0
 	ld de, $8800
 	push hl
@@ -51,15 +82,28 @@ player_redraw:
 	inc h
 	call load_tile_sprite
 
-	; Set player X,Y
+	; Get camera pos
+	; X
+	ld hl, cam_x
+	ld c, (hl)
+	inc l
+	inc l
+	; Y
+	ld b, (hl)
+
+	; Set player sprite pos
+	; Y
 	ld hl, $FE00
 	ld a, (player_y)
+	sub b
 	add $10
 	ld (hl), a
 	ld l, $04
+	; X
 	ld (hl), a
 	ld l, $01
 	ld a, (player_x)
+	sub c
 	add $08
 	ld (hl), a
 	ld l, $05
@@ -68,8 +112,60 @@ player_redraw:
 
 	; Return
 	pop de
+	pop bc
 	pop hl
 	pop af
 	ret
+
+	; player_cam_update: Centre the camera on the player
+	;
+	; Input: -
+	; Output: -
+	; Clobbers: -
+player_cam_update:
+	push af
+	push hl
+	push de
+
+	; Set up player camera
+	; X
+	ld hl, player_x
+	ld a, (hl)
+	inc l
+	ld h, (hl)
+	ld l, a
+	ld de, -(160-16)/2
+	add hl, de
+	bit 7, h
+	jr z, +
+		ld hl, $0000
+	+:
+	ld a, l
+	ld (cam_x+0), a
+	ld a, h
+	ld (cam_x+1), a
+
+	; Y
+	ld hl, player_y
+	ld a, (hl)
+	inc l
+	ld h, (hl)
+	ld l, a
+	ld de, -(144-16)/2
+	add hl, de
+	bit 7, h
+	jr z, +
+		ld hl, $0000
+	+:
+	ld a, l
+	ld (cam_y+0), a
+	ld a, h
+	ld (cam_y+1), a
+
+	pop de
+	pop hl
+	pop af
+	ret
+
 .ends
 

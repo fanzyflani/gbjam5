@@ -92,6 +92,10 @@ start:
 		dec b
 		jp nz, -
 	
+	; Generate + draw first level
+	call level_generate
+	call level_draw_full
+
 	; TEST: Draw tilemap
 	ld hl, $9800
 	ld b, 0
@@ -134,11 +138,6 @@ start:
 	ld a, %00000000
 	ld (hl), a
 
-	ld a, 0
-	ld (player_x), a
-	ld a, 0
-	ld (player_y), a
-
 	; Set palettes
 	ld a, %00011011
 	ld (BGP), a
@@ -177,6 +176,12 @@ start:
 		ld a, (hl)
 		xor $02
 		ld (hl), a
+
+		; Scroll
+		ld a, (cam_y)
+		ld (SCY), a
+		ld a, (cam_x)
+		ld (SCX), a
 
 		; Swap BG banks
 		ld a, (LCDC)
