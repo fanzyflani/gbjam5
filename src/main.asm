@@ -78,15 +78,34 @@ start:
 		ld (hl), a
 		inc l
 		dec b
-		jp z, -
+		jp nz, -
 
-	; Test tile
-	ld hl, tiles1_beg
+	; Load tiles
+	ld b, 16*8
+	ld hl, tile01_beg
 	ld de, $8000
-	;call load_tile_bg
-	ld de, $8000
-	;call load_tile_bg
+	-:
+		call load_tile_bg
+		dec b
+		jp nz, -
+	
+	; TEST: Draw tilemap
+	ld hl, $9800
+	ld b, 0
+	-:
+		ld a, b
+		ldi (hl), a
+		inc b
+		jr z, ++
+		ld a, b
+		and $0F
+		jp nz, -
+		ld de, $20-$10
+		add hl, de
+		jp -
+	++:
 
+	; Test sprite
 	ld hl, sprites1_beg + 64*0
 	ld de, $8800
 	push hl
@@ -159,7 +178,7 @@ start:
 		ld a, c
 		rlca
 		rlca
-		ld (BGP), a
+		;ld (BGP), a
 		inc c
 
 		-:
@@ -336,26 +355,12 @@ load_tile_sprite:
 .ends
 
 .section "Tiles1x" align 256
-tiles1_beg:
-	.db %00000000, %00000000, %00000000
-	.db %00011000, %00000000, %00000000
-	.db %00011000, %01100110, %01100000
-	.db %00000000, %01100110, %01100000
-	.db %01100110, %00000110, %01100000
-	.db %01100110, %00000110, %01111000
-	.db %00000000, %00000000, %00011000
-	.db %00000000, %00000000, %00000000
+tile01_beg:
+	.incbin "bin/tile01.bin"
+tile01_end:
+.ends
 
-	.db %00010000, %10100000, %11000000
-	.db %01000000, %10010000, %11100000
-	.db %00000000, %00000000, %00000000
-	.db %00000000, %00000000, %00000000
-	.db %00000000, %00000000, %00000000
-	.db %00000000, %00000000, %00000000
-	.db %00000000, %00000000, %00000000
-	.db %00000000, %00000000, %00000000
-tiles1_end:
-
+.section "Sprites1x" align 256
 sprites1_beg:
 	.incbin "bin/psprite01.bin"
 sprites1_end:
