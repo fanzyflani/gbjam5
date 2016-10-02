@@ -92,7 +92,7 @@ level_generate:
 	; Clear level data
 	ld b, $00
 	ld hl, level_data
-	ld a, $10 ; This'll probably be $00
+	ld a, $00
 	-:
 		; Unroll for convenience
 		; (pfft, you thought I was doing this for speed?)
@@ -129,14 +129,74 @@ level_generate:
 		xor d
 
 		; Mask + range it
-		and $1F
+		;and $1F
+		and $10
 		add $10
 
+		; Advance
 		ldi (hl), a
 		dec c
 		jp nz, -
 		dec b
 		jp nz, -
+
+	; Apply autostitch
+	ld c, 64-1
+	ld hl, level_data
+	---:
+		; Loop
+		ld b, 64-1
+	--:
+
+		; Get tile + flags
+		ld d, chunk_mapping_flags>>8
+		ld e, (hl)
+		ld a, (de)
+
+		; Check for autostitch flag
+		bit 1, a
+		jp z, ++
+			; Check right
+			inc l
+			ld a, (hl)
+			xor e
+			and $F0
+			jp nz, +
+				set 0, e
+				set 1, (hl)
+			+:
+			dec l
+
+			; Check down
+			push hl
+			push bc
+			ld bc, 64
+			add hl, bc
+			ld a, (hl)
+			xor e
+			and $F0
+			jp nz, +
+				set 3, e
+				set 2, (hl)
+			+:
+			pop bc
+			pop hl
+
+			; Save new value
+			ld (hl), e
+		++:
+
+		; Advance
+		inc l
+		dec b
+		jp nz, --
+
+		; Skip border
+		inc hl
+
+		; Advance
+		dec c
+		jp nz, ---
 
 	; Put player in a sensible spot
 	; X
@@ -223,6 +283,14 @@ level_draw_full:
 			pop hl
 			dec b
 			jp nz, -
+
+		; Step forward to the next line
+		ld a, l
+		add $30
+		ld l, a
+		ld a, h
+		adc $00
+		ld h, a
 
 		dec c
 		jp nz, --
