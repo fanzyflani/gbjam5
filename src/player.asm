@@ -162,9 +162,9 @@ player_cam_update:
 	; X clamp +ve
 	ld de, 160
 	add hl, de
-	bit 2, h
+	bit 0, h
 	jr z, +
-		ld hl, 64*16
+		ld hl, $100
 	+:
 	ld de, -160
 	add hl, de
@@ -190,9 +190,9 @@ player_cam_update:
 	; Y clamp +ve
 	ld de, 144
 	add hl, de
-	bit 2, h
+	bit 0, h
 	jr z, +
-		ld hl, 64*16
+		ld hl, $100
 	+:
 	ld de, -144
 	add hl, de

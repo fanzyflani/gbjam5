@@ -201,13 +201,13 @@ level_generate:
 	; Put player in a sensible spot
 	; X
 	ld hl, player_x
-	ld de, 512
+	ld de, 128
 	ld (hl), e
 	inc l
 	ld (hl), d
 	inc l
 	; Y
-	ld de, 512
+	ld de, 128
 	ld (hl), e
 	inc l
 	ld (hl), d

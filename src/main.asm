@@ -146,20 +146,20 @@ start:
 	call level_draw_full
 
 	; TEST: Draw tilemap
-	ld hl, $9800
-	ld b, 0
-	-:
-		ld a, b
-		ldi (hl), a
-		inc b
-		jr z, ++
-		ld a, b
-		and $0F
-		jp nz, -
-		ld de, $20-$10
-		add hl, de
-		jp -
-	++:
+	;ld hl, $9800
+	;ld b, 0
+	;-:
+	;	ld a, b
+	;	ldi (hl), a
+	;	inc b
+	;	jr z, ++
+	;	ld a, b
+	;	and $0F
+	;	jp nz, -
+	;	ld de, $20-$10
+	;	add hl, de
+	;	jp -
+	;++:
 
 	; Set up a sprite
 	ld hl, oam_buf + $00
