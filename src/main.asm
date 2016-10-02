@@ -181,7 +181,7 @@ start:
 	ld a, 8+8
 	ld (hl), a
 	inc l
-	ld a, $84
+	ld a, $82
 	ld (hl), a
 	inc l
 	ld a, %00000000
@@ -194,6 +194,10 @@ start:
 	ld (OBP0), a
 	ld a, %00101100
 	ld (OBP1), a
+
+	; Update player stuff
+	ld a, $00
+	ld (player_tile_src), a
 
 	; Turn screen on
 	call screen_on
@@ -248,17 +252,17 @@ irq_vblank:
 	ld (BGP), a
 
 	; Swap sprite bits
-	ld hl, oam_buf+$02
-	ld a, (hl)
-	xor $02
-	ld (hl), a
-	inc l
-	inc l
-	inc l
-	inc l
-	ld a, (hl)
-	xor $02
-	ld (hl), a
+	;ld hl, oam_buf+$02
+	;ld a, (hl)
+	;xor $02
+	;ld (hl), a
+	;inc l
+	;inc l
+	;inc l
+	;inc l
+	;ld a, (hl)
+	;xor $02
+	;ld (hl), a
 
 	; Update stuff
 	call player_update

@@ -3,6 +3,7 @@
 	player_y dw
 	cam_x dw
 	cam_y dw
+	player_tile_src db
 .ends
 
 .section "file_player"
@@ -86,6 +87,12 @@ player_update:
 	add $08
 	ld (hl), a
 
+	; Flip sprite mode flag
+	ld hl, player_tile_src
+	ld a, (hl)
+	xor $20
+	ld (hl), a
+
 	pop de
 	pop bc
 	pop hl
@@ -93,18 +100,37 @@ player_update:
 	ret
 
 	; player_redraw_unsafe: Uploads the next player sprite
+	; DO NOT LET THIS RUN OUTSIDE OF VBLANK AT ALL
 	;
 	; Input: -
 	; Output: -
 	; Clobbers: AF, BC, DE, HL
 player_redraw_unsafe:
+	; Draw first tile
 	ld hl, psprite01_beg + 64*0
+	ld a, (player_tile_src)
+	xor l
+	ld l, a
 	ld de, $8800
+
+	; Object 0
 	push hl
-	call load_tile_sprite
+	.repeat 32
+	ldi a,(hl)
+	ld (de), a
+	inc e
+	.endr
 	pop hl
 	inc h
-	call load_tile_sprite
+
+	; Object 1
+	.repeat 31
+	ldi a,(hl)
+	ld (de), a
+	inc e
+	.endr
+	ld a, (hl)
+	ld (de), a
 
 	; Return
 	ret
