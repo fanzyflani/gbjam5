@@ -97,6 +97,42 @@ level_generate:
 		dec b
 		jp nz, -
 
+	; TEST: Fill level with random data
+	ld bc, $1000
+	ld hl, level_data
+	ld de, $2B16
+	-:
+		; Clock LFSR
+		srl d
+		rr e
+		jp nc, +
+			ld a, $90
+			xor d
+			ld d, a
+		+:
+
+		; Some randomness
+		ld a, e
+		rrca
+		rrca
+		rrca
+		xor d
+		rrca
+		rrca
+		xor e
+		rrca
+		xor d
+
+		; Mask + range it
+		and $1F
+		add $10
+
+		ldi (hl), a
+		dec c
+		jp nz, -
+		dec b
+		jp nz, -
+
 	; Put player in a sensible spot
 	; X
 	ld hl, player_x
