@@ -162,7 +162,7 @@ player_cam_update:
 	; X clamp +ve
 	ld de, 160
 	add hl, de
-	bit 0, h
+	bit MAP_SIZE_BITS-4, h
 	jr z, +
 		ld hl, $100
 	+:
@@ -190,7 +190,7 @@ player_cam_update:
 	; Y clamp +ve
 	ld de, 144
 	add hl, de
-	bit 0, h
+	bit MAP_SIZE_BITS-4, h
 	jr z, +
 		ld hl, $100
 	+:

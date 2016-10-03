@@ -1,7 +1,5 @@
 .ramsection "ram_level" slot 3 align 256
-	; RULE #1 ALWAYS USE EXACTLY ONE HALF OF RAM FOR *SOMETHING SPECIFIC*
-	; (rule #2 is "use almost none of the remaining RAM")
-	level_data dsb 64*64
+	level_data dsb (1<<MAP_SIZE_BITS)*(1<<MAP_SIZE_BITS)
 .ends
 
 .section "level_chunk_mapping_vis" align 1024
@@ -90,22 +88,24 @@ level_generate:
 	push de
 
 	; Clear level data
-	ld b, $00
+	ld c, (1<<MAP_SIZE_BITS)
 	ld hl, level_data
 	ld a, $00
+	--:
+		ld b, (1<<MAP_SIZE_BITS)
 	-:
-		; Unroll for convenience
-		; (pfft, you thought I was doing this for speed?)
-		.repeat 16
 		ldi (hl), a
-		.endr
 		dec b
 		jp nz, -
+		dec c
+		jp nz, --
 
 	; TEST: Fill level with random data
-	ld bc, $1000
+	ld c, (1<<MAP_SIZE_BITS)
 	ld hl, level_data
 	ld de, $2B16
+	--:
+		ld b, (1<<MAP_SIZE_BITS)
 	-:
 		; Clock LFSR
 		srl d
@@ -135,17 +135,17 @@ level_generate:
 
 		; Advance
 		ldi (hl), a
-		dec c
-		jp nz, -
 		dec b
 		jp nz, -
+		dec c
+		jp nz, --
 
 	; Apply autostitch
-	ld c, 64-1
+	ld c, (1<<MAP_SIZE_BITS)
 	ld hl, level_data
 	---:
 		; Loop
-		ld b, 64-1
+		ld b, (1<<MAP_SIZE_BITS)
 	--:
 
 		; Get tile + flags
@@ -155,46 +155,50 @@ level_generate:
 
 		; Check for autostitch flag
 		bit 1, a
-		jp z, ++
-			; Check right
-			inc l
-			ld a, (hl)
-			xor e
-			and $F0
-			jp nz, +
-				set 0, e
-				set 1, (hl)
-			+:
-			dec l
+		jp z, +++
+			; Check right (if not at edge)
 
-			; Check down
-			push hl
-			push bc
-			ld bc, 64
-			add hl, bc
-			ld a, (hl)
-			xor e
-			and $F0
-			jp nz, +
-				set 3, e
-				set 2, (hl)
-			+:
-			pop bc
-			pop hl
+			ld a, b
+			cp $01
+			jp z, ++
+				inc l
+				ld a, (hl)
+				xor e
+				and $F0
+				jp nz, +
+					set 0, e
+					set 1, (hl)
+				+:
+				dec l
+			++:
+
+			; Check down (if not at edge)
+			ld a, c
+			cp $01
+			jp z, ++
+				push hl
+				push bc
+				ld bc, (1<<MAP_SIZE_BITS)
+				add hl, bc
+				ld a, (hl)
+				xor e
+				and $F0
+				jp nz, +
+					set 3, e
+					set 2, (hl)
+				+:
+				pop bc
+				pop hl
+			++:
 
 			; Save new value
 			ld (hl), e
-		++:
+		+++:
 
 		; Advance
-		inc l
+		inc hl
 		dec b
 		jp nz, --
-
-		; Skip border
-		inc hl
-
-		; Advance
 		dec c
 		jp nz, ---
 
@@ -286,7 +290,7 @@ level_draw_full:
 
 		; Step forward to the next line
 		ld a, l
-		add $30
+		add 0+((1<<MAP_SIZE_BITS)-16)
 		ld l, a
 		ld a, h
 		adc $00

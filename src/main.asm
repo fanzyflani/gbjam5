@@ -37,6 +37,11 @@ ramsize $00
 .include "src/hwdefs.asm"
 
 ;
+; SETTINGS
+;
+.define MAP_SIZE_BITS 4 ; 4,5,6 are valid values
+
+;
 ; Main includes
 ;
 .include "src/joy.asm"
